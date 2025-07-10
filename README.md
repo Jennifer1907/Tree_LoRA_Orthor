@@ -43,13 +43,11 @@ If you find this code useful, please cite our paper:
 The main dependencies are listed below. For a complete list, see `requirements.txt`:
 
 ```
-datasets>=2.8.0
-transformers==4.31.0
-torch
-deepspeed==0.9.0
-peft
-accelerate==0.15.0
-huggingface-hub==0.16.4
+accelerate==1.0.1
+bitsandbytes==0.46.1
+deepspeed==0.15.3+cu124torch2.4
+torch==2.4.1
+torchvision==0.19.1
 ```
 
 ## Quick Start
