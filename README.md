@@ -2,19 +2,6 @@
 
 This repository contains the official PyTorch implementation of TreeLoRA, an efficient continual learning method for Large Language Models (LLMs) that uses layer-wise LoRA adapters guided by a hierarchical gradient-similarity tree.
 
-## Reference
-
-If you find this code useful, please cite our paper:
-
-```bibtex
-@inproceedings{ICML'25:TreeLoRA,
-    author = {Yu-Yang Qian and Yuan-Ze Xu and Zhen-Yu Zhang and Peng Zhao and Zhi-Hua Zhou},
-    title = {{T}ree{L}o{RA}: Efficient Continual Learning via Layer-Wise {L}o{RA}s Guided by a Hierarchical Gradient-Similarity Tree},
-    booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
-    year = {2025},
-    pages = {50066--50085}
-}
-```
 
 ## Code Structure
 
@@ -108,3 +95,18 @@ Or simply, run `./scripts/run_all_exps.sh` to run all the experiments.
 -   Support for multiple LLM architectures (Gemma, LLaMA, Mistral, etc.)
 -   DeepSpeed integration for efficient training
 -   Flash attention implementation for improved performance
+
+
+## Citation
+
+If you find this code useful, please cite our paper:
+
+```bibtex
+@inproceedings{ICML'25:TreeLoRA,
+    author = {Yu-Yang Qian and Yuan-Ze Xu and Zhen-Yu Zhang and Peng Zhao and Zhi-Hua Zhou},
+    title = {{T}ree{L}o{RA}: Efficient Continual Learning via Layer-Wise {L}o{RA}s Guided by a Hierarchical Gradient-Similarity Tree},
+    booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+    year = {2025},
+    pages = {50066--50085}
+}
+```
