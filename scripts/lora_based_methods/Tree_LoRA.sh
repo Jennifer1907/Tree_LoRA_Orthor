@@ -3,11 +3,11 @@
 #get current time:
 now=$(date +"%m%d_%H%M%S")
 #get GPUs:
-gpu_nodes="0,1,2,3"
+gpu_nodes="0"
 
 #model_name="Llama-2-7b-chat"
 #model_name="Llama-3.1-8B-Instruct"
-#model_name="Llama-3.2-1B-Instruct"
+model_name="Llama-3.2-1B-Instruct"
 #model_name="Qwen2.5-7B-Instruct"
 #model_name="Mistral-7B-Instruct-v0.3"
 #model_name="gemma-2b-it"
@@ -31,7 +31,7 @@ deepspeed --include=localhost:$gpu_nodes --master_port 25011 training/main.py  \
     --learning_rate 1e-4 \
     --weight_decay 0. \
     --num_train_epochs $epochs \
-    --gradient_accumulation_steps 8 \
+    --gradient_accumulation_steps 32 \
     --lr_scheduler_type cosine \
     --num_warmup_steps 0 \
     --seed 1234 \

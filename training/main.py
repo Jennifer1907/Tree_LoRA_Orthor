@@ -237,6 +237,58 @@ def parse_args():
                         default=0.5,
                         type=float,
                         help='weight for KL loss in SAPT ARM module')
+    parser.add_argument('--model_type',
+                    type=str,
+                    default='llm',
+                    choices=['llm', 'vit', 'multimodal'],
+                    help='Backbone type to run.')
+
+    parser.add_argument('--vision_model_name_or_path',
+                        type=str,
+                        default=None,
+                        help='Path or model name for ViT backbone.')
+
+    parser.add_argument('--image_size',
+                        type=int,
+                        default=224,
+                        help='Input image size for ViT.')
+
+    parser.add_argument('--num_classes',
+                        type=int,
+                        default=None,
+                        help='Number of classes for image classification.')
+
+    parser.add_argument('--vit_mean',
+                        type=float,
+                        nargs=3,
+                        default=[0.5, 0.5, 0.5],
+                        help='Normalization mean for ViT images.')
+
+    parser.add_argument('--vit_std',
+                        type=float,
+                        nargs=3,
+                        default=[0.5, 0.5, 0.5],
+                        help='Normalization std for ViT images.')
+
+    parser.add_argument('--vit_lr',
+                        type=float,
+                        default=5e-3,
+                        help='Learning rate for ViT experiments.')
+
+    parser.add_argument('--vit_weight_decay',
+                        type=float,
+                        default=0.0,
+                        help='Weight decay for ViT experiments.')
+
+    parser.add_argument('--vit_epochs',
+                        type=int,
+                        default=20,
+                        help='Training epochs for ViT experiments.')
+
+    parser.add_argument('--vit_batch_size',
+                        type=int,
+                        default=192,
+                        help='Batch size for ViT experiments.')
     parser = deepspeed.add_config_arguments(parser)
     args = parser.parse_args()
 
@@ -274,17 +326,35 @@ def main():
     # Barrier to make sure all process are ready to train
     torch.distributed.barrier()
 
-    tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=True)
-    # default the LLM is decoder only model, so padding side is left
-    assert tokenizer.padding_side == 'left'
-    assert tokenizer.truncation_side == "left"
+    tokenizer = None
+    image_processor = None
 
-    model = create_hf_model(AutoModelForCausalLM,
-                            args.model_name_or_path,
-                            tokenizer,
-                            ds_config=ds_config,
-                            disable_dropout=args.disable_dropout
-                            )
+    if args.model_type == "llm":
+        tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=True)
+        assert tokenizer.padding_side == 'left'
+        assert tokenizer.truncation_side == "left"
+
+        model = create_hf_model(
+            AutoModelForCausalLM,
+            args.model_name_or_path,
+            tokenizer,
+            ds_config=ds_config,
+            disable_dropout=args.disable_dropout
+        )
+
+    elif args.model_type == "vit":
+        from transformers import AutoImageProcessor
+        from utils.model.model_utils import create_vit_model
+
+        image_processor = AutoImageProcessor.from_pretrained(args.vision_model_name_or_path)
+        model = create_vit_model(
+            model_name_or_path=args.vision_model_name_or_path,
+            num_classes=args.num_classes,
+            disable_dropout=args.disable_dropout
+        )
+
+    else:
+        raise NotImplementedError(f"Unsupported model_type: {args.model_type}")
     
     # # replace SiLU with ReLU
     # replace_silu_with_relu(model)
@@ -454,23 +524,31 @@ def main():
             eval_sampler = DistributedSampler(eval_dataset)
             test_sampler = DistributedSampler(test_dataset)
 
-        data_collator = DataCollator(
-            tokenizer,
-            padding="longest",
-            max_prompt_len=args.max_prompt_len,
-            max_ans_len=args.max_ans_len,
-            pad_to_multiple_of=8,
-            inference=False
-        )
-        inf_data_collator = DataCollator(
-            tokenizer,
-            model=model,
-            padding="longest",
-            max_prompt_len=args.max_prompt_len,
-            max_ans_len=args.max_ans_len,
-            pad_to_multiple_of=8,
-            inference=True
-        )
+        if args.model_type == "llm":
+            data_collator = DataCollator(
+                tokenizer,
+                padding="longest",
+                max_prompt_len=args.max_prompt_len,
+                max_ans_len=args.max_ans_len,
+                pad_to_multiple_of=8,
+                inference=False
+            )
+            inf_data_collator = DataCollator(
+                tokenizer,
+                model=model,
+                padding="longest",
+                max_prompt_len=args.max_prompt_len,
+                max_ans_len=args.max_ans_len,
+                pad_to_multiple_of=8,
+                inference=True
+            )
+        elif args.model_type == "vit":
+            from utils.data.vit_data_collator import ViTDataCollator
+
+            data_collator = ViTDataCollator(image_processor=image_processor, inference=False)
+            inf_data_collator = ViTDataCollator(image_processor=image_processor, inference=True)
+        else:
+            raise NotImplementedError
                 
 
         train_dataloader = DataLoader(train_dataset,
@@ -515,24 +593,30 @@ def main():
         return perplexity
 
     def get_optimizer(model):
-        # Split weights in two groups, one with weight decay and the other not.
         optimizer_grouped_parameters = get_optimizer_grouped_parameters(
-            model, args.weight_decay)
-        
-        # AdamOptimizer = DeepSpeedCPUAdam if args.offload else FusedAdam
+            model, args.weight_decay if args.model_type == "llm" else args.vit_weight_decay
+        )
+
         AdamOptimizer = torch.optim.Adam
-        optimizer = AdamOptimizer(optimizer_grouped_parameters,
-                                lr=args.learning_rate,
-                                betas=(0.9, 0.95))
-        
-        total_train_dataloader_len = sum(len(train_task_list[task]) for task in list(train_task_list.keys()))
-        num_update_steps_per_epoch = math.ceil(
-            total_train_dataloader_len / args.gradient_accumulation_steps)
+
+        if args.model_type == "vit":
+            optimizer = AdamOptimizer(
+                optimizer_grouped_parameters,
+                lr=args.vit_lr,
+                betas=(0.9, 0.999)
+            )
+        else:
+            optimizer = AdamOptimizer(
+                optimizer_grouped_parameters,
+                lr=args.learning_rate,
+                betas=(0.9, 0.95)
+            )
+
         lr_scheduler = get_constant_schedule_with_warmup(
             optimizer=optimizer,
             num_warmup_steps=args.num_warmup_steps
         )
-        
+
         return optimizer, lr_scheduler
     
     if args.CL_method == "DualPrompt":

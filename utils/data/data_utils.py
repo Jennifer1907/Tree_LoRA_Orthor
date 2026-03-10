@@ -319,4 +319,7 @@ def create_prompt_dataset(local_rank,
 
     if distributed:
         torch.distributed.barrier()
-    return torch.load(train_fname), torch.load(eval_fname), torch.load(test_fname)
+    return (
+    torch.load(train_fname, weights_only=False),
+    torch.load(eval_fname, weights_only=False),
+    torch.load(test_fname, weights_only=False),)
