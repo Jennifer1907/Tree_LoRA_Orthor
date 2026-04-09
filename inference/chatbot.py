@@ -49,7 +49,7 @@ def get_generator(path):
                                            config=model_config).half()
 
     model.config.end_token_id = tokenizer.eos_token_id
-    model.config.pad_token_id = model.config.eos_token_id
+    model.config.pad_token_id = model.config.eos_token_id if isinstance(model.config.eos_token_id, int) else model.config.eos_token_id[0]
     model.resize_token_embeddings(len(tokenizer))
     generator = pipeline("text-generation",
                          model=model,

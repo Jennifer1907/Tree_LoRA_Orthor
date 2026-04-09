@@ -13,7 +13,7 @@ from transformers import (
     AutoModel,
 )
 from huggingface_hub import snapshot_download
-from transformers.deepspeed import HfDeepSpeedConfig
+from transformers.integrations import HfDeepSpeedConfig
 from transformers import LlamaForCausalLM, LlamaConfig
 
 from utils.utils import print_rank_0
@@ -82,7 +82,8 @@ def create_hf_model(model_class,
     # llama use eos_token_id but not end_token_id
     model.config.end_token_id = tokenizer.eos_token_id
     # compatible with OPT and llama2
-    model.config.pad_token_id = model.config.eos_token_id
+    eos = model.config.eos_token_id
+    model.config.pad_token_id = eos[0] if isinstance(eos, list) else eos
     model.resize_token_embeddings(int(8 * math.ceil(len(tokenizer) / 8.0)))  # make the vocab size multiple of 8
 
     return model

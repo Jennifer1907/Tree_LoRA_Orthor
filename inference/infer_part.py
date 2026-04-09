@@ -63,8 +63,8 @@ from model.Dynamic_network.DualPrompt import convert_DualPrompt_model
 from utils.flash_attention.llama_flash_att import replace_llama_attn_with_flash_attn
 from utils.flash_attention.bloom_flash_att import replace_bloom_attn_with_flash_attn
 
-replace_llama_attn_with_flash_attn()
-replace_bloom_attn_with_flash_attn()
+#replace_llama_attn_with_flash_attn()
+#replace_bloom_attn_with_flash_attn()
 
 def parse_args():
     def list_of_strings(arg):
@@ -298,6 +298,14 @@ def main():
             elif name.find("lora_") != -1:
                 param.requires_grad = False
 
+    if args.CL_method == "Tree_LoRA_Ortho":
+        from utils.my_peft import PeftModel
+        model = PeftModel.from_pretrained(model, inference_model_path)
+        for name, param in model.named_parameters():
+            if name.find("loranew_") != -1:
+                param.requires_grad = False
+            elif name.find("lora_") != -1:
+                param.requires_grad = False
 
     if args.CL_method == "TaSL":
         from utils.my_peft import PeftModel
@@ -400,7 +408,7 @@ def main():
     # lora_methods: [LFPT5, lora, O_LoRA, Tree_LoRA, OGD]
     # lora not in lower case:
     # if "lora" not in str(args.CL_method).lower() and args.CL_method not in ['LFPT5', 'OGD', 'FIX']:
-    if "lora" not in str(args.CL_method).lower() and args.CL_method not in ['LFPT5', 'OGD', 'FIX', 'TaSL', 'SAPT']:
+    if "lora" not in str(args.CL_method).lower() and args.CL_method not in ['LFPT5', 'OGD', 'FIX', 'TaSL', 'SAPT', 'Tree_LoRA_Ortho']:
         print("Line 400")
         # if args.CL_method != "O_LoRA" and args.CL_method != "Tree_LoRA" and args.CL_method != "LFPT5":
         inference_model = torch.load(os.path.join(inference_model_path, "pytorch_model.bin"))

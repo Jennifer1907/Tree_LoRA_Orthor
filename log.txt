@@ -1,0 +1,13 @@
+---=== Running Step 1 ===---
+Traceback (most recent call last):
+  File "/home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/train.py", line 208, in <module>
+    main(args)
+  File "/home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/train.py", line 192, in main
+    cmd = get_cmd(args, step_num)
+  File "/home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/train.py", line 153, in get_cmd
+    script = get_script(args, step_num)
+  File "/home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/train.py", line 133, in get_script
+    assert os.path.isfile(
+AssertionError: /home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/training/step1_supervised_finetuning/training_scripts/single_gpu/run_1.3b.sh does not exist.
+
+ Use examples in /home/kle-home-lab/code/HA-workspace/TreeLora/TreeLoRA/training/step1_supervised_finetuning/training_scripts/single_gpu as a template.

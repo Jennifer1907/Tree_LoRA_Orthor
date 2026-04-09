@@ -6,6 +6,7 @@ from model.Regular.EWC import EWC
 from model.Regular.GEM import GEM
 from model.Regular.OGD import OGD
 from model.Replay.MbPAplusplus import MbPAplusplus
+from model.Regular.Tree_LoRA_Ortho import Tree_LoRA_Ortho  
 from model.Replay.LFPT5 import LFPT5
 from model.Regular.O_LoRA import O_LoRA
 from model.base_model import CL_Base_Model
@@ -21,6 +22,7 @@ Method2Class = {"EWC"      : EWC,
                 "O_LoRA"   : O_LoRA,  # Orthogonal Subspace Learning for Language Model Continual Learning
                 "Hide_LoRA" : HideLoRA,
                 "Tree_LoRA": Tree_LoRA,
+                "Tree_LoRA_Ortho": Tree_LoRA_Ortho,
                 "base"     : CL_Base_Model,
                 "lora"     : lora}  # SeqLoRA
 
