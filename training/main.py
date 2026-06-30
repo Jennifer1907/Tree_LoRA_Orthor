@@ -357,6 +357,19 @@ def main():
             elif name.find("lora_") != -1:
                 param.requires_grad = False
 
+    if args.CL_method in ("LoRA_Baseline", "Ortho_LoRA"):
+        from utils.my_peft import get_peft_model, LoraConfig, TaskType
+
+        peft_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=32, lora_dropout=0.1
+        )
+        model = get_peft_model(model, peft_config, depth=args.lora_depth)
+        for name, param in model.named_parameters():
+            if name.find("loranew_") != -1:
+                param.requires_grad = True
+            elif name.find("lora_") != -1:
+                param.requires_grad = False
+                
     if args.CL_method == "Tree_LoRA_Ortho":
         from utils.my_peft import get_peft_model, LoraConfig, TaskType
 

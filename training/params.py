@@ -11,6 +11,8 @@ from model.Replay.LFPT5 import LFPT5
 from model.Regular.O_LoRA import O_LoRA
 from model.base_model import CL_Base_Model
 from model.lora import lora
+from model.Regular.LoRA import LoRA_Baseline        # tên class trong file của bạn
+from model.Regular.LoRA_Ortho import Ortho_LoRA 
 
 Method2Class = {"EWC"      : EWC,
                 "GEM"      : GEM,  # Gradient Episodic Memory for Continual Learning
@@ -22,6 +24,8 @@ Method2Class = {"EWC"      : EWC,
                 "O_LoRA"   : O_LoRA,  # Orthogonal Subspace Learning for Language Model Continual Learning
                 "Hide_LoRA" : HideLoRA,
                 "Tree_LoRA": Tree_LoRA,
+                "LoRA_Baseline": LoRA_Baseline,
+                "Ortho_LoRA": Ortho_LoRA,
                 "Tree_LoRA_Ortho": Tree_LoRA_Ortho,
                 "base"     : CL_Base_Model,
                 "lora"     : lora}  # SeqLoRA
